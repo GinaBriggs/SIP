@@ -14,7 +14,6 @@ import {
   Layers,
   AlertCircle,
   AlertTriangle,
-  CheckCircle,
   Copy,
   RefreshCw,
   Play,
