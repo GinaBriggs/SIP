@@ -167,10 +167,10 @@ const App = () => {
   const coverageScore = data?.analysis.coverage.score ?? 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100">
+    <div className="w-full m-0 p-0 min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100">
       {/* Header */}
-      <header className="border-b border-slate-800 bg-slate-950/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+      <header className="border-b border-white/5 bg-slate-950/50 backdrop-blur-sm sticky top-0 z-50">
+        <div className="max-w-[95%] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
@@ -212,11 +212,11 @@ const App = () => {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-[95%] mx-auto px-6 py-8">
         {/* Dashboard Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {/* Approval Insights Card */}
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 rounded-xl p-6 shadow-xl">
+          <div className="bg-gradient-to-br from-slate-900 to-slate-800 border-none rounded-xl p-6 shadow-xl">
             <div className="flex items-center gap-3 mb-4">
               <div
                 className={`w-10 h-10 rounded-lg flex items-center justify-center ${
@@ -267,7 +267,7 @@ const App = () => {
           </div>
 
           {/* Archetype Drift Card */}
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 rounded-xl p-6 shadow-xl">
+          <div className="bg-gradient-to-br from-slate-900 to-slate-800 shadow-2xl rounded-xl p-6 shadow-xl">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center">
                 <Target className="w-5 h-5 text-amber-400" />
