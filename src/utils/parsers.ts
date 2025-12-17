@@ -1,120 +1,95 @@
-/**
- * Parsing utilities for various text formats
- */
-
-// SalesNav parser types
-export interface SalesNavResult {
-  keywords: string[];
-  seniority: 'Senior' | 'Staff' | 'Unknown';
+// ✅ MATCHING TYPES (These match what App.tsx expects)
+export interface SalesNavSignals {
+  seniorityBias: string;
+  companyType: string;
+  searchIntent: string;
 }
 
-// EOD parser types
-export interface EODResult {
-  juiceboxCount: number;
-  salesnavCount: number;
-  repoCount: number;
+export interface EODSignals {
+  methodCount: number;
+  primaryMethod: string;
+  rawText: string;
 }
 
-// Sheet parser types
-export interface SheetResult {
-  approved: number;
-  rejected: number;
+export interface SheetSignals {
+  approvalRate: number;
+  topRejectionReason: string;
 }
 
-/**
- * Parses SalesNav-style text to extract keywords and guess seniority
- * @param text Input text to parse
- * @returns Object containing keywords array and seniority guess
- */
-export function parseSalesNav(text: string): SalesNavResult {
-  const result: SalesNavResult = {
-    keywords: [],
-    seniority: 'Unknown'
-  };
+// --- PARSER 1: Sales Navigator (Fixed for URLs) ---
+export const parseSalesNav = (text: string): SalesNavSignals => {
+  // Logic: Decodes URL text so "seniority%3Asenior" becomes "seniority:senior"
+  const decodedText = decodeURIComponent(text).toLowerCase();
 
-  // Extract keywords (simple word-based extraction)
-  const words = text.toLowerCase().split(/\s+/);
-  const commonKeywords = [
-    'engineer', 'developer', 'manager', 'director', 'lead',
-    'designer', 'analyst', 'architect', 'specialist', 'consultant'
-  ];
-
-  const foundKeywords = new Set<string>();
+  // keywords
+  const isSenior = /senior|staff|principal|lead|founding|head/.test(decodedText);
+  const isJunior = /junior|associate|entry|intern/.test(decodedText);
   
-  words.forEach(word => {
-    const cleanWord = word.replace(/[^a-z]/g, '');
-    if (cleanWord.length > 2 && commonKeywords.includes(cleanWord)) {
-      foundKeywords.add(cleanWord);
-    }
-  });
+  // company filters
+  const isStartup = /seed|series|founding|early/.test(decodedText);
+  const isEnterprise = /enterprise|public|fortune/.test(decodedText);
 
-  result.keywords = Array.from(foundKeywords);
-
-  // Guess seniority based on text clues
-  const seniorityIndicators = {
-    Senior: /\bsenior\b|\bsr\.?\b|\bprincipal\b|\blead\b|\bexperienced\b/i,
-    Staff: /\bstaff\b|\bstrategic\b|\bexpert\b|\badvanced\b/i
+  return {
+    // ✅ Field name matches App.tsx
+    seniorityBias: isSenior ? 'Senior' : isJunior ? 'Junior' : 'Mid-level',
+    companyType: isStartup ? 'Startup' : isEnterprise ? 'Enterprise' : 'General',
+    searchIntent: text.includes('currentCompany') ? 'Current Role' : 'Keyword Search'
   };
+};
 
-  if (seniorityIndicators.Senior.test(text)) {
-    result.seniority = 'Senior';
-  } else if (seniorityIndicators.Staff.test(text)) {
-    result.seniority = 'Staff';
-  }
-
-  return result;
-}
-
-/**
- * Parses EOD (End of Day) reports to count occurrences of specific terms
- * @param text Input text to analyze
- * @returns Object containing counts for each tracked term
- */
-export function parseEOD(text: string): EODResult {
-  const result: EODResult = {
-    juiceboxCount: 0,
-    salesnavCount: 0,
-    repoCount: 0
-  };
-
-  // Case-insensitive counting
+// --- PARSER 2: EOD Updates (Fixed for your Input) ---
+export const parseEOD = (text: string): EODSignals => {
   const lowerText = text.toLowerCase();
   
-  // Simple regex matching for whole words
-  result.juiceboxCount = (lowerText.match(/\bjuicebox\b/g) || []).length;
-  result.salesnavCount = (lowerText.match(/\bsalesnav\b/g) || []).length;
-  result.repoCount = (lowerText.match(/\brepo\b/g) || []).length;
+  // 1. Expanded sourcing methods list based on your input
+  const methods = [
+    'sales nav', 'salesnav', 'linkedin', 'juicebox', 'crunchbase', 
+    'github', 'google', 'x-ray', 'deep research', 'keyword search', 
+    'quota metrics', 'startupy', 'donor companies'
+  ];
 
-  return result;
-}
+  // 2. Count unique methods mentioned
+  const foundMethods = methods.filter(m => lowerText.includes(m));
+  
+  // 3. Pick the "Primary" method (just the first one found)
+  const primary = foundMethods.length > 0 ? foundMethods[0] : 'None';
 
-/**
- * Parses sheet/text containing approval/rejection counts
- * @param text Input text containing approval/rejection data
- * @returns Object with approved and rejected counts (0 if not found)
- */
-export function parseSheet(text: string): SheetResult {
-  const result: SheetResult = {
-    approved: 0,
-    rejected: 0
+  return {
+    // ✅ Field names match App.tsx
+    methodCount: foundMethods.length, 
+    primaryMethod: primary.charAt(0).toUpperCase() + primary.slice(1),
+    rawText: text
   };
+};
 
-  // Extract approved count
-  const approvedMatch = text.match(/Approved:\s*(\d+)/i);
-  if (approvedMatch) {
-    result.approved = parseInt(approvedMatch[1], 10);
+// --- PARSER 3: Google Sheet (Fixed for Tabular Data) ---
+export const parseSheet = (text: string): SheetSignals => {
+  // STRATEGY: Find "Approval rate" followed by a number, even in messy tables
+  // Matches "Approval rate 22%" (found at bottom of your input)
+  // or "Approval Rate <tab> 29%" (found in middle)
+  const rateMatch = text.match(/Approval\s*Rate.*?(\d{1,2})%/i);
+  
+  let rate = 0;
+  if (rateMatch && rateMatch[1]) {
+    rate = parseInt(rateMatch[1]);
   }
 
-  // Extract rejected count
-  const rejectedMatch = text.match(/Rejected:\s*(\d+)/i);
-  if (rejectedMatch) {
-    result.rejected = parseInt(rejectedMatch[1], 10);
-  }
+  // STRATEGY: Rejection reasons
+  // Your input doesn't have an explicit "Reasons" list, so we scan for "bad signs"
+  const rejectionKeywords = ['senior', 'experience', 'culture', 'mismatch', 'technical', 'scale', 'quality', 'grind'];
+  const foundReason = rejectionKeywords.find(k => text.toLowerCase().includes(k));
 
-  return result;
-}
+  return {
+    // ✅ Field names match App.tsx
+    approvalRate: rate,
+    topRejectionReason: foundReason ? `Issues with "${foundReason}"` : 'General Fit'
+  };
+};
 
-// Optional: Combined parser if needed
+// Dummy exports for the others
+export const parseTranscript = (text: string) => text;
+export const parseRetro = (text: string) => text;
+
 export default {
   parseSalesNav,
   parseEOD,
